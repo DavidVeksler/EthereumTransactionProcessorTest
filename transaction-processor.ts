@@ -3,37 +3,24 @@ import { IRepository } from './irepository-interface';
 import { Transaction, Deposit } from './types';
 
 export class TransactionProcessor {
-    private static readonly AddressToCustomer: { [key: string]: string } = {
-        'mvd6qFeVkqH6MNAS2Y2cLifbdaX5XUkbZJ': 'Wesley Crusher',
-        'mmFFG4jqAtw9MoCC88hw5FNfreQWuEHADp': 'Leonard McCoy',
-        'mzzg8fvHXydKs8j9D2a8t7KpSXpGgAnk4n': 'Jonathan Archer',
-        '2N1SP7r92ZZJvYKG2oNtzPwYnzw62up7mTo': 'Jadzia Dax',
-        'mutrAf4usv3HKNdpLwVD4ow2oLArL6Rez8': 'Montgomery Scott',
-        'miTHhiX3iFhVnAEecLjybxvV5g8mKYTtnM': 'James T. Kirk',
-        'mvcyJMiAcSXKAEsQxbW9TYZ369rsMG6rVV': 'Spock'
-    };
-
-    constructor(private readonly repository: IRepository) {}
+    constructor(
+        private readonly repository: IRepository,
+        private readonly addressToCustomer: { [key: string]: string }
+    ) {}
 
     public async processFiles(filePaths: string[]): Promise<void> {
-        // console.log(`Processing ${filePaths.length} files`);
         for (const filePath of filePaths) {
-            // console.log(`Reading file: ${filePath}`);
             const fileContent = fs.readFileSync(filePath, 'utf-8');
             const transactions: Transaction[] = JSON.parse(fileContent).transactions || [];
-            // console.log(`Found ${transactions.length} transactions in ${filePath}`);
             const validDeposits = transactions.filter(this.isValidDeposit);
-            // console.log(`${validDeposits.length} valid deposits found in ${filePath}`);
             await this.repository.storeDeposits(validDeposits);
         }
     }
 
     public async generateReport(): Promise<string> {
-        // console.log('Generating report...');
         const deposits = await this.repository.getValidDeposits();
-        // console.log(`Processing ${deposits.length} deposits for report`);
         const depositsByCustomer = deposits.reduce((acc: { [key: string]: { count: number, sum: number } }, deposit) => {
-            const customer = TransactionProcessor.AddressToCustomer[deposit.address] || 'Unknown';
+            const customer = this.addressToCustomer[deposit.address] || 'Unknown';
             if (!acc[customer]) {
                 acc[customer] = { count: 0, sum: 0 };
             }
@@ -44,7 +31,7 @@ export class TransactionProcessor {
 
         const output: string[] = [];
 
-        Object.values(TransactionProcessor.AddressToCustomer).forEach(customer => {
+        Object.values(this.addressToCustomer).forEach(customer => {
             const { count, sum } = depositsByCustomer[customer] || { count: 0, sum: 0 };
             output.push(`Deposited for ${customer}: count=${count} sum=${sum.toFixed(8)}`);
         });
@@ -61,7 +48,6 @@ export class TransactionProcessor {
             output.push('Largest valid deposit: 0.00000000');
         }
 
-        // console.log('Report generation complete');
         return output.join('\n');
     }
 

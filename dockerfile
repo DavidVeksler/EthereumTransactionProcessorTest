@@ -7,8 +7,6 @@ RUN apk add --no-cache python3 make g++ sqlite-dev
 COPY package*.json ./
 RUN npm install
 
-# RUN npm uninstall sqlite3 && npm install better-sqlite3
-
 COPY . .
 RUN npx tsc
 
