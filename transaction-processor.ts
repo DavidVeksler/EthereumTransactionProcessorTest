@@ -15,16 +15,23 @@ export class TransactionProcessor {
 
     constructor(private readonly repository: IRepository) {}
 
-    public processFiles(filePaths: string[]): void {
-        filePaths.forEach(filePath => {
+    public async processFiles(filePaths: string[]): Promise<void> {
+        // console.log(`Processing ${filePaths.length} files`);
+        for (const filePath of filePaths) {
+            // console.log(`Reading file: ${filePath}`);
             const fileContent = fs.readFileSync(filePath, 'utf-8');
             const transactions: Transaction[] = JSON.parse(fileContent).transactions || [];
-            this.repository.storeDeposits(transactions.filter(this.isValidDeposit));
-        });
+            // console.log(`Found ${transactions.length} transactions in ${filePath}`);
+            const validDeposits = transactions.filter(this.isValidDeposit);
+            // console.log(`${validDeposits.length} valid deposits found in ${filePath}`);
+            await this.repository.storeDeposits(validDeposits);
+        }
     }
 
     public async generateReport(): Promise<string> {
+        // console.log('Generating report...');
         const deposits = await this.repository.getValidDeposits();
+        // console.log(`Processing ${deposits.length} deposits for report`);
         const depositsByCustomer = deposits.reduce((acc: { [key: string]: { count: number, sum: number } }, deposit) => {
             const customer = TransactionProcessor.AddressToCustomer[deposit.address] || 'Unknown';
             if (!acc[customer]) {
@@ -54,6 +61,7 @@ export class TransactionProcessor {
             output.push('Largest valid deposit: 0.00000000');
         }
 
+        // console.log('Report generation complete');
         return output.join('\n');
     }
 
