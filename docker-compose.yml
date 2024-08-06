@@ -1,0 +1,9 @@
+version: '3'
+services:
+  app:
+    build: .
+    volumes:
+      - ./transactions-1.json:/usr/src/app/transactions-1.json
+      - ./transactions-2.json:/usr/src/app/transactions-2.json
+      - ./transactions.db:/usr/src/app/transactions.db
+    command: node dist/main.js
