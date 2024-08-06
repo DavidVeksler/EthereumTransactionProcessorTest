@@ -10,14 +10,11 @@ COPY package*.json ./
 # Install any needed packages specified in package.json
 RUN npm install
 
-# Install typescript globally
-RUN npm install -g typescript
-
 # Copy the rest of the application's code
 COPY . .
 
 # Compile TypeScript to JavaScript
-RUN tsc
+RUN npx tsc
 
 # Make port 3000 available to the world outside this container
 EXPOSE 3000
@@ -26,4 +23,4 @@ EXPOSE 3000
 ENV NODE_ENV production
 
 # Run the app when the container launches
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/main-script.js"]

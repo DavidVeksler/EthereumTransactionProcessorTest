@@ -7,3 +7,5 @@ services:
       - ./transactions-2.json:/usr/src/app/transactions-2.json
       - ./transactions.db:/usr/src/app/transactions.db
     command: node dist/main.js
+    environment:
+      - NODE_ENV=production

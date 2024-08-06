@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { IRepository } from './IRepository';
+import { IRepository } from './irepository-interface';
 import { Transaction, Deposit } from './types';
 
 export class TransactionProcessor {
@@ -23,9 +23,9 @@ export class TransactionProcessor {
         });
     }
 
-    public generateReport(): string {
-        const deposits = this.repository.getValidDeposits();
-        const depositsByCustomer = deposits.reduce((acc, deposit) => {
+    public async generateReport(): Promise<string> {
+        const deposits = await this.repository.getValidDeposits();
+        const depositsByCustomer = deposits.reduce((acc: { [key: string]: { count: number, sum: number } }, deposit) => {
             const customer = TransactionProcessor.AddressToCustomer[deposit.address] || 'Unknown';
             if (!acc[customer]) {
                 acc[customer] = { count: 0, sum: 0 };
@@ -33,7 +33,7 @@ export class TransactionProcessor {
             acc[customer].count++;
             acc[customer].sum += deposit.amount;
             return acc;
-        }, {} as { [key: string]: { count: number, sum: number } });
+        }, {});
 
         const output: string[] = [];
 

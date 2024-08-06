@@ -1,5 +1,5 @@
 import sqlite3 from 'sqlite3';
-import { IRepository } from './IRepository';
+import { IRepository } from './irepository-interface';
 import { Transaction, Deposit } from './types';
 
 export class SqliteRepository implements IRepository {
@@ -39,12 +39,12 @@ export class SqliteRepository implements IRepository {
         stmt.finalize();
     }
 
-    public getValidDeposits(): Deposit[] {
+    public getValidDeposits(): Promise<Deposit[]> {
         return new Promise<Deposit[]>((resolve, reject) => {
             const deposits: Deposit[] = [];
             this.db.each(
                 'SELECT Address, Amount FROM Deposits WHERE Confirmations >= 6',
-                (err, row) => {
+                (err, row: { Address: string; Amount: number }) => {
                     if (err) {
                         reject(err);
                     } else {
