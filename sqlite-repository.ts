@@ -48,10 +48,10 @@ export class SqliteRepository implements IRepository {
                 this.db.run('BEGIN TRANSACTION');
                 deposits.forEach((deposit, index) => {
                     stmt.run(
-                        deposit.address, 
-                        deposit.amount, 
-                        deposit.confirmations, 
-                        deposit.txid, 
+                        deposit.address,
+                        deposit.amount,
+                        deposit.confirmations,
+                        deposit.txid,
                         (err: Error | null) => {
                             if (err) {
                                 console.error(`Error inserting deposit ${index}:`, err);
@@ -102,6 +102,21 @@ export class SqliteRepository implements IRepository {
                     }
                 }
             );
+        });
+    }
+
+    public async clearDatabase(): Promise<void> {
+        await this.initialized;
+        return new Promise<void>((resolve, reject) => {
+            this.db.run('DELETE FROM Deposits', (err: Error | null) => {
+                if (err) {
+                    console.error('Error clearing database:', err);
+                    reject(err);
+                } else {
+                    // console.log("reset DB");
+                    resolve();
+                }
+            });
         });
     }
 }
