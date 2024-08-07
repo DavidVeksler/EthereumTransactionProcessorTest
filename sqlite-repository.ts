@@ -7,28 +7,40 @@ export class SqliteRepository implements IRepository {
     private initialized: Promise<void>;
 
     constructor(connectionString: string) {
-        // console.log(`Initializing SQLite database: ${connectionString}`);
         this.db = new sqlite3.Database(connectionString);
         this.initialized = this.initializeDatabase();
     }
 
+    // TODO: for maximum accuracy, we would store the amount as an int wei value
     private initializeDatabase(): Promise<void> {
         return new Promise<void>((resolve, reject) => {
-            // console.log('Initializing database...');
             this.db.run(`
                 CREATE TABLE IF NOT EXISTS Deposits (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     Address TEXT NOT NULL,
-                    Amount REAL NOT NULL,
+                    Amount REAL NOT NULL, 
                     Confirmations INTEGER NOT NULL,
-                    TransactionId TEXT NOT NULL
+                    TransactionId TEXT NOT NULL UNIQUE
                 )
             `, (err: Error | null) => {
                 if (err) {
                     console.error('Error creating Deposits table:', err);
                     reject(err);
                 } else {
-                    // console.log('Deposits table created or already exists');
+                    resolve();
+                }
+            });
+        });
+    }
+
+    public async clearDatabase(): Promise<void> {
+        await this.initialized;
+        return new Promise<void>((resolve, reject) => {
+            this.db.run('DELETE FROM Deposits', (err: Error | null) => {
+                if (err) {
+                    console.error('Error clearing database:', err);
+                    reject(err);
+                } else {
                     resolve();
                 }
             });
@@ -37,26 +49,20 @@ export class SqliteRepository implements IRepository {
 
     public async storeDeposits(deposits: Transaction[]): Promise<void> {
         await this.initialized;
-        // console.log(`Storing ${deposits.length} deposits`);
         return new Promise<void>((resolve, reject) => {
             const stmt = this.db.prepare(`
-                INSERT INTO Deposits (Address, Amount, Confirmations, TransactionId)
+                INSERT OR IGNORE INTO Deposits (Address, Amount, Confirmations, TransactionId)
                 VALUES (?, ?, ?, ?)
             `);
 
             this.db.serialize(() => {
                 this.db.run('BEGIN TRANSACTION');
-                deposits.forEach((deposit, index) => {
+                deposits.forEach((deposit) => {
                     stmt.run(
-                        deposit.address,
-                        deposit.amount,
-                        deposit.confirmations,
-                        deposit.txid,
-                        (err: Error | null) => {
-                            if (err) {
-                                console.error(`Error inserting deposit ${index}:`, err);
-                            }
-                        }
+                        deposit.address, 
+                        deposit.amount, 
+                        deposit.confirmations, 
+                        deposit.txid
                     );
                 });
                 this.db.run('COMMIT', (err: Error | null) => {
@@ -64,7 +70,6 @@ export class SqliteRepository implements IRepository {
                         console.error('Error committing transaction:', err);
                         reject(err);
                     } else {
-                        // console.log(`${deposits.length} deposits stored successfully`);
                         resolve();
                     }
                 });
@@ -76,7 +81,6 @@ export class SqliteRepository implements IRepository {
 
     public async getValidDeposits(): Promise<Deposit[]> {
         await this.initialized;
-        // console.log('Fetching valid deposits...');
         return new Promise<Deposit[]>((resolve, reject) => {
             const deposits: Deposit[] = [];
             this.db.each(
@@ -97,26 +101,10 @@ export class SqliteRepository implements IRepository {
                         console.error('Error after fetching deposits:', err);
                         reject(err);
                     } else {
-                        // console.log(`Fetched ${count} valid deposits`);
                         resolve(deposits);
                     }
                 }
             );
-        });
-    }
-
-    public async clearDatabase(): Promise<void> {
-        await this.initialized;
-        return new Promise<void>((resolve, reject) => {
-            this.db.run('DELETE FROM Deposits', (err: Error | null) => {
-                if (err) {
-                    console.error('Error clearing database:', err);
-                    reject(err);
-                } else {
-                    // console.log("reset DB");
-                    resolve();
-                }
-            });
         });
     }
 }
