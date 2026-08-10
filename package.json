@@ -12,7 +12,7 @@
   },
   "devDependencies": {
     "@types/node": "^26.1.2",
-    "@types/sqlite3": "^3.1.8",
+    "@types/sqlite3": "^5.1.0",
     "typescript": "^7.0.2"
   }
 }
